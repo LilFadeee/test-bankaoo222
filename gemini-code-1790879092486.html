@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Bill MB Bank</title>
+  <!-- Nhúng thư viện html2canvas để xuất ảnh -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f4f6f8; display: flex; gap: 20px; padding: 20px; justify-content: center; align-items: flex-start; }
+    
+    /* Form nhập liệu */
+    .form-container { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 320px; }
+    .form-container h3 { margin-top: 0; color: #001A9C; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #333; }
+    .form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    button { width: 100%; padding: 10px; background: #001A9C; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    button:hover { background: #001270; }
+
+    /* Màn hình Bill Preview */
+    .bill-card { width: 360px; background: #001A9C; color: white; border-radius: 16px; padding: 24px 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); position: relative; }
+    .bill-header { text-align: center; margin-bottom: 20px; }
+    .bill-header .logo { font-size: 22px; font-weight: 800; letter-spacing: 1px; color: #fff; }
+    .bill-header .success-icon { width: 50px; height: 50px; background: #00D084; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 15px auto 10px; font-size: 24px; color: #fff; }
+    .bill-header .title { font-size: 15px; color: #B3C0FF; margin-top: 5px; }
+    .bill-header .amount { font-size: 28px; font-weight: bold; margin-top: 5px; color: #00FF87; }
+    
+    .bill-body { background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; font-size: 13px; margin-bottom: 15px; }
+    .bill-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .bill-row:last-child { margin-bottom: 0; }
+    .bill-label { color: #B3C0FF; }
+    .bill-value { font-weight: 600; text-align: right; max-width: 60%; word-break: break-word; }
+
+    .bill-footer { text-align: center; font-size: 11px; color: #8099FF; margin-top: 15px; }
+  </style>
+</head>
+<body>
+
+  <!-- Khối nhập dữ liệu -->
+  <div class="form-container">
+    <h3>Cấu hình Bill MB</h3>
+    <div class="form-group">
+      <label>Tên người nhận:</label>
+      <input type="text" id="inName" value="NGUYEN VAN A" oninput="updateBill()">
+    </div>
+    <div class="form-group">
+      <label>Số tài khoản:</label>
+      <input type="text" id="inAcc" value="9999888888" oninput="updateBill()">
+    </div>
+    <div class="form-group">
+      <label>Ngân hàng:</label>
+      <input type="text" id="inBank" value="MB Bank" oninput="updateBill()">
+    </div>
+    <div class="form-group">
+      <label>Số tiền (VNĐ):</label>
+      <input type="text" id="inAmount" value="500,000" oninput="updateBill()">
+    </div>
+    <div class="form-group">
+      <label>Nội dung:</label>
+      <input type="text" id="inContent" value="Chuyen tien qua MB" oninput="updateBill()">
+    </div>
+    <div class="form-group">
+      <label>Mã giao dịch:</label>
+      <input type="text" id="inCode" value="FT26102123456" oninput="updateBill()">
+    </div>
+    <button onclick="downloadBill()">Tải ảnh Bill (.PNG)</button>
+  </div>
+
+  <!-- Khối hiển thị Bill -->
+  <div class="bill-card" id="billTarget">
+    <div class="bill-header">
+      <div class="logo">MB BANK</div>
+      <div class="success-icon">✓</div>
+      <div class="title">Giao dịch thành công</div>
+      <div class="amount" id="outAmount">500,000 VND</div>
+    </div>
+
+    <div class="bill-body">
+      <div class="bill-row">
+        <span class="bill-label">Tên người nhận</span>
+        <span class="bill-value" id="outName">NGUYEN VAN A</span>
+      </div>
+      <div class="bill-row">
+        <span class="bill-label">Tài khoản nhận</span>
+        <span class="bill-value" id="outAcc">9999888888</span>
+      </div>
+      <div class="bill-row">
+        <span class="bill-label">Ngân hàng</span>
+        <span class="bill-value" id="outBank">MB Bank</span>
+      </div>
+      <div class="bill-row">
+        <span class="bill-label">Nội dung</span>
+        <span class="bill-value" id="outContent">Chuyen tien qua MB</span>
+      </div>
+      <div class="bill-row">
+        <span class="bill-label">Mã giao dịch</span>
+        <span class="bill-value" id="outCode">FT26102123456</span>
+      </div>
+      <div class="bill-row">
+        <span class="bill-label">Thời gian</span>
+        <span class="bill-value" id="outTime">--/--/---- --:--</span>
+      </div>
+    </div>
+
+    <div class="bill-footer">
+      Cảm ơn bạn đã sử dụng dịch vụ của MB Bank
+    </div>
+  </div>
+
+  <script>
+    // Hàm cập nhật ngày giờ hiện tại
+    function setNowTime() {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+      document.getElementById('outTime').innerText = dateStr;
+    }
+
+    // Cập nhật thông tin real-time từ form vào bill
+    function updateBill() {
+      document.getElementById('outName').innerText = document.getElementById('inName').value.toUpperCase();
+      document.getElementById('outAcc').innerText = document.getElementById('inAcc').value;
+      document.getElementById('outBank').innerText = document.getElementById('inBank').value;
+      document.getElementById('outAmount').innerText = document.getElementById('inAmount').value + ' VND';
+      document.getElementById('outContent').innerText = document.getElementById('inContent').value;
+      document.getElementById('outCode').innerText = document.getElementById('inCode').value;
+    }
+
+    // Xuất khung HTML thành ảnh PNG
+    function downloadBill() {
+      const billContainer = document.getElementById('billTarget');
+      html2canvas(billContainer, { scale: 2 }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'bill-mbbank.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    // Khởi tạo thời gian ban đầu
+    setNowTime();
+  </script>
+
+</body>
+</html>
